@@ -9,7 +9,7 @@ import unittest
 
 import magicsuper
 
-class TestAutoSuperDocs(unittest.TestCase):
+class TestMagicSuperDocs(unittest.TestCase):
 
     def test_readme_matches_docstring(self):
         """Ensure that the README is in sync with the docstring.
@@ -32,7 +32,7 @@ class TestAutoSuperDocs(unittest.TestCase):
                 f.close()
 
 
-class TestAutoSuper(unittest.TestCase):
+class TestMagicSuper(unittest.TestCase):
 
     def test_basic_diamond(self):
         class Base(object):
@@ -110,7 +110,38 @@ class TestAutoSuper(unittest.TestCase):
             self.assertSuperEquals(magicsuper._builtin_super(cls),super(cls))
             self.assertSuperEquals(magicsuper._builtin_super(cls,obj),
                                    super(cls,obj))
-        
+
+    def test_superm(self):
+        class Base(object):
+            def getit(self):
+                return 2
+        class Sub(Base):
+            def getit(self):
+                return 10 * magicsuper.superm()
+        s = Sub()
+        self.assertEquals(s.getit(),20)
+
+    def test_use_inside_dunder_new(self):
+        class Terminal(str):
+            def __new__(cls, value, token_type):
+                self = super().__new__(cls, value)
+                self.token_type = token_type
+                return self
+        DOT = Terminal(".", "dit")
+        self.assertTrue(isinstance(DOT, str))
+        self.assertTrue(isinstance(DOT, Terminal))
+
+    def test_use_inside_classmethod(self):
+        class Base(object):
+            @classmethod
+            def getit(cls):
+                return 42
+        class Singleton(Base):
+            @classmethod
+            def getit(cls):
+                print super()
+                return super().getit() + 1
+        self.assertEquals(Singleton.getit(), 43)
 
 
 if __name__ == "__main__":
